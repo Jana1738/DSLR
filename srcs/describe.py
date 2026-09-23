@@ -16,6 +16,30 @@ def get_percentile(sorted_data, count, percentile):
         return sorted_data[lower]
     return sorted_data[lower] * (1 - weight) + sorted_data[upper] * weight
 
+def skewness(clean_data, mean, std, m):
+    data = clean_data.to_numpy()
+    if m < 3:
+        return np.nan
+    
+    if std == 0:
+        return 0.0
+    
+    factor = m /((m - 1) * (m - 2))
+    skew = factor * np.sum(((data - mean) / std) ** 3)
+
+    return skew
+    
+def kurtosis(clean_data, mean, std, m):
+    data = clean_data.to_numpy()
+    if m < 4:
+        return np.nan
+
+    if std == 0:
+        return 0.0
+
+    return (1 / m) * np.sum(((data - mean) / std) ** 4) - 3
+
+
 
 def main(path):
 
@@ -36,14 +60,17 @@ def main(path):
             median = get_percentile(sort, count, 0.50)
             q3 = get_percentile(sort, count, 0.75)
             max = sort[-1]
+            skew = skewness(clean_data, mean, std, count)
+            kurt = kurtosis(clean_data, mean, std, count)
+            range = max - min
 
-            desc[col] = [count, mean, std, min, q1, median, q3, max]
+            desc[col] = [count, mean, std, min, q1, median, q3, max, skew, kurt, range]
 
         result_df = pd.DataFrame(desc, index=['Count', 'Mean', \
-                                          'std', 'min', '25%', '50%', '75%', 'max'])
+                                          'std', 'min', '25%', '50%', '75%', 'max', 'skew', 'kurt', 'range'])
         print(f"1: {result_df}")
-        print(type(desc))
-        # print(f"2: {df.describe()}")
+        print(f"2: {df.describe()}")
+        print(df.kurtosis(numeric_only=True))
     
     except Exception as e:
         print(f"Error: {e}")
